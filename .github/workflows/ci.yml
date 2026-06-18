@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "*/*.py"
+      - "*/*.java"
+      - "*/*.cpp"
+      - "*/*.ts"
+      - "*/*.go"
+      - "*/*.rs"
+      - "pyproject.toml"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "*/*.py"
+      - "*/*.java"
+      - "*/*.cpp"
+      - "*/*.ts"
+      - "*/*.go"
+      - "*/*.rs"
+      - "pyproject.toml"
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Python -- pytest discovers all solution files automatically
+  # -------------------------------------------------------------------------
+  python:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tests
+        run: pytest --tb=short -q
+
+  # -------------------------------------------------------------------------
+  # Java -- JBang runs each solution file as a self-contained script.
+  # No Maven, no copying files, no project structure required.
+  # Each .java file carries its own //DEPS and a JBangRunner main() entry point.
+  # -------------------------------------------------------------------------
+  java:
+    name: Java Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install JBang
+        run: |
+          curl -Ls https://sh.jbang.dev | bash -s - app setup
+          echo "$HOME/.jbang/bin" >> $GITHUB_PATH
+
+      - name: Cache JBang dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.jbang/cache
+          key: jbang-${{ hashFiles('**/*.java') }}
+          restore-keys: jbang-
+
+      - name: Run Java solution tests
+        run: |
+          failed=0
+          # Find all .java solution files (excludes scripts/ and templates/)
+          while IFS= read -r file; do
+            echo ">> Testing: $file"
+            if ! jbang "$file"; then
+              echo "FAIL: $file"
+              failed=$((failed + 1))
+            fi
+          done < <(find . -path './scripts' -prune -o -path './templates' -prune -o -path './examples' -prune -o -name '*.java' -print)
+
+          if [ "$failed" -gt 0 ]; then
+            echo "$failed file(s) failed."
+            exit 1
+          fi
+          echo "All Java tests passed."

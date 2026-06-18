@@ -1,0 +1,70 @@
+"""
+Problem:    Two Sum
+Link:       https://leetcode.com/problems/two-sum/
+Number:     0001
+Topic:      Arrays & Hashing
+Difficulty: Easy  🟢
+
+---
+
+Problem Statement:
+    Given an array of integers nums and an integer target, return indices of
+    the two numbers such that they add up to target.
+
+Examples:
+    Input:  nums = [2,7,11,15], target = 9
+    Output: [0,1]
+
+    Input:  nums = [3,2,4], target = 6
+    Output: [1,2]
+
+Constraints:
+    - 2 <= nums.length <= 10^4
+    - Only one valid answer exists.
+
+---
+
+Approach:
+    Use a hash map to store each number's complement index as we iterate.
+    For every element, check if its complement (target - num) is already in
+    the map. O(n) time instead of O(n^2) brute force.
+
+Complexity:
+    Time:  O(n)
+    Space: O(n)
+"""
+
+from typing import List, Optional
+
+
+class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        seen = {}
+        for i, num in enumerate(nums):
+            complement = target - num
+            if complement in seen:
+                return [seen[complement], i]
+            seen[num] = i
+        return []
+
+
+# ---------------------------------------------------------------------------
+# Tests  (remove @pytest.mark.skip once your solution is correct)
+# ---------------------------------------------------------------------------
+import pytest
+
+@pytest.mark.skip(reason='not solved yet')
+def test_example_1():
+    assert Solution().twoSum([2, 7, 11, 15], 9) == [0, 1]
+
+@pytest.mark.skip(reason='not solved yet')
+def test_example_2():
+    assert Solution().twoSum([3, 2, 4], 6) == [1, 2]
+
+@pytest.mark.skip(reason='not solved yet')
+def test_example_3():
+    assert Solution().twoSum([3, 3], 6) == [0, 1]
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

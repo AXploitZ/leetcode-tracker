@@ -1,0 +1,15 @@
+[tool.pytest.ini_options]
+# Discover all solution files automatically
+testpaths = ["."]
+python_files = ["*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Ignore non-solution directories
+norecursedirs = [
+    ".git", ".github", "templates", "scripts", "examples",
+    "__pycache__", "out", "target", ".idea", ".venv", "venv"
+]
+
+# Show a clean summary
+addopts = "-v --tb=short"
