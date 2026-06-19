@@ -449,12 +449,19 @@ _JBANG_RUNNER = """\
 class JBangRunner {
     public static void main(String[] args) throws Exception {
         var launcher = org.junit.platform.launcher.core.LauncherFactory.create();
-        var request  = org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
+
+        // Discover by classpath roots rather than package name -- JBang
+        // compiles single-file sources without a guaranteed default package,
+        // so selectPackage("") can silently find zero tests.
+        var classpathRoots = new java.util.HashSet<java.nio.file.Path>();
+        classpathRoots.add(java.nio.file.Paths.get(
+            JBangRunner.class.getProtectionDomain()
+                .getCodeSource().getLocation().toURI()));
+
+        var request = org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
             .request()
-            // Selects all test classes in the default (unnamed) package,
-            // so any *Test class added to this file is picked up automatically.
             .selectors(org.junit.platform.engine.discovery.DiscoverySelectors
-                .selectPackage(""))
+                .selectClasspathRoots(classpathRoots))
             .build();
 
         // Live, per-test output -- prints as each test finishes (PASS / FAIL / SKIP)
