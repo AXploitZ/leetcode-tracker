@@ -136,25 +136,69 @@ the problem number will continue to work.
 
 ## Multiple solutions for the same problem
 
-Add additional classes to the same file. Use descriptive names that convey
-the approach:
+`scripts/new.py` always scaffolds a single `Solution` class. If you want to
+keep a second approach (e.g. a brute-force version for comparison) in the
+same file, add it yourself following the pattern below -- this keeps the
+script simple while still letting you compare approaches when it's useful.
+
+**Python**
+
+Add another class with a name that describes the approach, plus a comment
+with its complexity:
 
 ```python
 class SolutionBruteForce:
     # Time: O(n^2), Space: O(1)
-    ...
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        for i in range(len(nums)):
+            for j in range(i + 1, len(nums)):
+                if nums[i] + nums[j] == target:
+                    return [i, j]
+        return []
+
 
 class Solution:
     # Time: O(n), Space: O(n)
-    ...
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        ...
 ```
 
-Add a corresponding test class for each:
+Add a matching `@pytest.mark.skip` test for the new class -- pytest discovers
+any `test_*` function in the file automatically, so no other wiring is needed:
+
 ```python
 @pytest.mark.skip(reason='not solved yet')
 def test_brute_force_example_1():
     assert SolutionBruteForce().twoSum([2, 7, 11, 15], 9) == [0, 1]
 ```
 
-The `scripts/new.py` scaffolds a `SolutionBruteForce` stub alongside the
-main `Solution` class by default.
+**Java**
+
+Add the second class and a matching `*Test` class:
+
+```java
+class SolutionBruteForce {
+    // Time: O(n^2), Space: O(1)
+    public int[] twoSum(int[] nums, int target) {
+        for (int i = 0; i < nums.length; i++)
+            for (int j = i + 1; j < nums.length; j++)
+                if (nums[i] + nums[j] == target)
+                    return new int[]{i, j};
+        return new int[]{};
+    }
+}
+
+class SolutionBruteForceTest {
+    private final SolutionBruteForce solution = new SolutionBruteForce();
+
+    @Disabled("not solved yet")
+    @Test
+    void testExample1() {
+        assertArrayEquals(new int[]{0, 1}, solution.twoSum(new int[]{2, 7, 11, 15}, 9));
+    }
+}
+```
+
+No changes to `JBangRunner` are needed -- it discovers every `*Test` class in
+the file automatically via `selectPackage("")`, so the new test class is
+picked up and reported the next time you run `jbang <file>.java`.

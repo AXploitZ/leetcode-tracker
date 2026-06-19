@@ -75,6 +75,13 @@ python scripts/new.py 121 --lang java
 python scripts/new.py 121 --lang py --lang java
 ```
 
+Each scaffolded file contains a single `Solution` class. If you'd like to
+keep more than one approach for a problem (e.g. a brute-force version
+alongside the optimal one), see
+[CUSTOMIZATION.md](./CUSTOMIZATION.md#multiple-solutions-for-the-same-problem)
+for the pattern -- it's a manual step by design, since most problems only
+need one solution.
+
 ### Running tests locally
 
 ```bash

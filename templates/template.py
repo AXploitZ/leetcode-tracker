@@ -21,29 +21,21 @@ Examples:
 Constraints:
     - 2 <= nums.length <= 10^4
     - Only one valid answer exists.
+
+---
+
+Approach:
+    Use a hash map to store each number's complement index as we iterate.
+    For every element, check if its complement (target - num) is already in
+    the map. O(n) time instead of O(n^2) brute force.
+
+Complexity:
+    Time:  O(n)
+    Space: O(n)
 """
 
 from typing import List, Optional
 
-
-# ---------------------------------------------------------------------------
-# Approach 1 -- Brute Force
-# Time:  O(n^2)  |  Space: O(1)
-# ---------------------------------------------------------------------------
-
-class SolutionBruteForce:
-    def twoSum(self, nums: List[int], target: int) -> List[int]:
-        for i in range(len(nums)):
-            for j in range(i + 1, len(nums)):
-                if nums[i] + nums[j] == target:
-                    return [i, j]
-        return []
-
-
-# ---------------------------------------------------------------------------
-# Approach 2 -- Hash Map  (optimal)
-# Time:  O(n)  |  Space: O(n)
-# ---------------------------------------------------------------------------
 
 class Solution:
     def twoSum(self, nums: List[int], target: int) -> List[int]:
@@ -60,22 +52,6 @@ class Solution:
 # Tests  (remove @pytest.mark.skip once your solution is correct)
 # ---------------------------------------------------------------------------
 import pytest
-
-# -- SolutionBruteForce --
-
-@pytest.mark.skip(reason='not solved yet')
-def test_brute_force_example_1():
-    assert SolutionBruteForce().twoSum([2, 7, 11, 15], 9) == [0, 1]
-
-@pytest.mark.skip(reason='not solved yet')
-def test_brute_force_example_2():
-    assert SolutionBruteForce().twoSum([3, 2, 4], 6) == [1, 2]
-
-@pytest.mark.skip(reason='not solved yet')
-def test_brute_force_example_3():
-    assert SolutionBruteForce().twoSum([3, 3], 6) == [0, 1]
-
-# -- Solution (Hash Map) --
 
 @pytest.mark.skip(reason='not solved yet')
 def test_example_1():

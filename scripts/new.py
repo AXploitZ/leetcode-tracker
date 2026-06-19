@@ -409,10 +409,7 @@ def _build_py_tests(meta: dict) -> str:
             args = ex.inputs[: len(params)]
             call = f"{class_name}().{method}({', '.join(args)})"
             block.append("@pytest.mark.skip(reason='not solved yet')")
-            if prefix.endswith("example_"):
-                block.append(f"def {prefix}{ex.index}():")
-            else:
-                block.append(f"def {prefix}test_example_{ex.index}():")
+            block.append(f"def {prefix}{ex.index}():")
             if ex.output is not None:
                 block.append(f"    assert {call} == {ex.output}")
             else:
@@ -428,16 +425,8 @@ def _build_py_tests(meta: dict) -> str:
         "# " + "-" * 75,
         "import pytest",
         "",
-        "# -- SolutionBruteForce --",
-        "",
     ]
-    lines += test_block("SolutionBruteForce", "test_brute_force_example_")
-
-    lines += [
-        "# -- Solution (optimal) --",
-        "",
-    ]
-    lines += test_block("Solution", "")
+    lines += test_block("Solution", "test_example_")
 
     lines += [
         "",
@@ -455,7 +444,8 @@ _JBANG_DEPS = (
 
 _JBANG_RUNNER = """\
 
-// JBang entry point -- discovers and runs every *Test class in this file
+// JBang entry point -- discovers and runs every *Test class in this file,
+// printing a per-test PASS / FAIL / SKIP line similar to `pytest -v`.
 class JBangRunner {
     public static void main(String[] args) throws Exception {
         var launcher = org.junit.platform.launcher.core.LauncherFactory.create();
@@ -466,11 +456,49 @@ class JBangRunner {
             .selectors(org.junit.platform.engine.discovery.DiscoverySelectors
                 .selectPackage(""))
             .build();
-        var listener = new org.junit.platform.launcher.listeners.SummaryGeneratingListener();
-        launcher.discover(request);
-        launcher.execute(request, listener);
-        var summary = listener.getSummary();
-        summary.printFailuresTo(new java.io.PrintWriter(System.out, true));
+
+        // Live, per-test output -- prints as each test finishes (PASS / FAIL / SKIP)
+        var verbose = new org.junit.platform.launcher.TestExecutionListener() {
+            @Override
+            public void executionSkipped(
+                    org.junit.platform.launcher.TestIdentifier id, String reason) {
+                if (id.isTest())
+                    System.out.println("SKIP  " + id.getDisplayName() + "  (" + reason + ")");
+            }
+
+            @Override
+            public void executionFinished(
+                    org.junit.platform.launcher.TestIdentifier id,
+                    org.junit.platform.engine.TestExecutionResult result) {
+                if (!id.isTest()) return;
+                switch (result.getStatus()) {
+                    case SUCCESSFUL:
+                        System.out.println("PASS  " + id.getDisplayName());
+                        break;
+                    case FAILED:
+                        System.out.println("FAIL  " + id.getDisplayName());
+                        result.getThrowable().ifPresent(t ->
+                            System.out.println("      " + t.getMessage()));
+                        break;
+                    default:
+                        break;
+                }
+            }
+        };
+
+        // Aggregate summary -- printed once at the end
+        var summaryListener = new org.junit.platform.launcher.listeners.SummaryGeneratingListener();
+
+        launcher.execute(request, verbose, summaryListener);
+
+        var summary = summaryListener.getSummary();
+        System.out.println();
+        System.out.println(
+            summary.getTestsSucceededCount() + " passed, " +
+            summary.getTestsFailedCount()    + " failed, " +
+            summary.getTestsSkippedCount()   + " skipped"
+        );
+
         if (summary.getTotalFailureCount() > 0) System.exit(1);
     }
 }
@@ -547,8 +575,6 @@ def _build_java_tests(meta: dict) -> str:
         "// " + "-" * 73,
         "",
     ]
-    lines += test_class("SolutionBruteForce", "solution")
-    lines += ["", ""]
     lines += test_class("Solution", "solution")
     return "\n".join(lines)
 
@@ -650,60 +676,14 @@ def _header_java(meta: dict, topic: str) -> str:
 
 def generate_file(meta: dict, topic: str, ext: str) -> str:
     if ext == "py":
-        method, params = _py_method_info(meta["snippets"].get("py", ""))
-        param_str = ", ".join(["self"] + [f"{p}" for p in params])
-        brute_force_stub = (
-            "# ---------------------------------------------------------------------------\n"
-            "# Approach 1 -- Brute Force\n"
-            "# Time:  O(?)  |  Space: O(?)\n"
-            "# ---------------------------------------------------------------------------\n"
-            "\n"
-            f"class SolutionBruteForce:\n"
-            f"    def {method}({param_str}):\n"
-            "        pass  # TODO\n"
-            "\n"
-            "\n"
-            "# ---------------------------------------------------------------------------\n"
-            "# Approach 2 -- (description)  (optimal)\n"
-            "# Time:  O(?)  |  Space: O(?)\n"
-            "# ---------------------------------------------------------------------------\n"
-            "\n"
-        )
         return (
             _header_py(meta, topic)
-            + brute_force_stub
             + meta["snippets"].get("py", "class Solution:\n    pass\n")
             + _build_py_tests(meta)
         )
     if ext == "java":
-        method, params, ret_type = _java_method_info(meta["snippets"].get("java", ""))
-        param_types = []
-        raw = meta["snippets"].get("java", "")
-        m = re.search(r"public\s+[\w\[\]<>]+\s+\w+\s*\(([^)]*)\)", raw)
-        param_decls = m.group(1) if m else ""
-        brute_force_stub = (
-            "// ---------------------------------------------------------------------------\n"
-            "// Approach 1 -- Brute Force\n"
-            f"// Time:  O(?)  |  Space: O(?)\n"
-            "// ---------------------------------------------------------------------------\n"
-            "\n"
-            f"class SolutionBruteForce {{\n"
-            f"    public {ret_type} {method}({param_decls}) {{\n"
-            "        // TODO\n"
-            f"        return {_java_default_return(ret_type)};\n"
-            "    }\n"
-            "}\n"
-            "\n"
-            "\n"
-            "// ---------------------------------------------------------------------------\n"
-            "// Approach 2 -- (description)  (optimal)\n"
-            f"// Time:  O(?)  |  Space: O(?)\n"
-            "// ---------------------------------------------------------------------------\n"
-            "\n"
-        )
         return (
             _header_java(meta, topic)
-            + brute_force_stub
             + meta["snippets"].get("java", "class Solution {\n}\n")
             + _build_java_tests(meta)
             + _JBANG_RUNNER
